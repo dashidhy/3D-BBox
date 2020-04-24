@@ -1,10 +1,11 @@
 import os
 from PIL import Image
 import numpy as np
+import torch
 
 __all__ = [
     'read_txt_lines', 'read_scene_labels', 'read_box_label', 'label_scene2box',
-    'write_box_label', 'write_box_image'
+    'write_box_label', 'write_box_image', 'box_label2tensor'
 ]
 
 
@@ -94,3 +95,10 @@ def write_box_image(box_image, filepath, force=False):
     assert filepath.endswith('.png')
     box_image.save(filepath)
     return
+
+
+def box_label2tensor(box_label):
+    for key, val in box_label.items():
+        if not isinstance(val, str):
+            box_label[key] = torch.tensor(val)
+    return box_label

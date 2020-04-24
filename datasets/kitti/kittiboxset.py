@@ -2,21 +2,11 @@ import os
 from PIL import Image
 import torch
 from torch.utils.data import Dataset
-if __name__ == '__main__':
-    import kitti_utils as ku
-else:
-    from . import kitti_utils as ku
+from . import kitti_utils as ku
 
 __all__ = [
-    'box_label2tensor', 'KittiBoxSet'
+    'KittiBoxSet'
 ]
-
-
-def box_label2tensor(box_label):
-    for key, val in box_label.items():
-        if not isinstance(val, str):
-            box_label[key] = torch.tensor(val)
-    return box_label
 
 
 class KittiBoxSet(Dataset):
@@ -48,22 +38,3 @@ class KittiBoxSet(Dataset):
             box_label = self.target_transform(box_label)
         
         return box_image, box_label
-
-
-# debug
-if __name__ == '__main__':
-    from torch.utils.data import DataLoader
-    from torchvision import transforms as T
-
-    kitti_root = '/home/srip19-pointcloud/datasets/KITTI'
-    trans = T.ToTensor()
-
-    boxset = KittiBoxSet(kitti_root, 'train', transform=trans, target_transform=box_label2tensor)
-    loader = DataLoader(boxset, batch_size=4, shuffle=True)
-
-    for batch in loader:
-        batch_box_tensor, batch_box_label = batch
-        break
-
-    print(batch_box_tensor.size())
-    print(batch_box_label)
