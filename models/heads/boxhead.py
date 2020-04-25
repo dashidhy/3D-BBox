@@ -20,7 +20,8 @@ class BoxHead(nn.Module):
             num_bins=2,
             d_hidden_sizes=[512],
             a_hidden_sizes=[256],
-            c_hidden_sizes=[256]
+            c_hidden_sizes=[256],
+            init_weights=True
         ):
         super(BoxHead, self).__init__()
 
@@ -30,6 +31,9 @@ class BoxHead(nn.Module):
         self.d_layers = self._make_fc_layers(d_hidden_sizes, 3)
         self.a_layers = self._make_fc_layers(a_hidden_sizes, num_bins*2)
         self.c_layers = self._make_fc_layers(c_hidden_sizes, num_bins)
+
+        if init_weights:
+            self.init_weights()
     
     def _make_fc_layers(self, hidden_sizes, out_size):
         fc_layers = []
@@ -41,7 +45,14 @@ class BoxHead(nn.Module):
         return nn.Sequential(*fc_layers)
     
     def init_weights(self):
-        pass
+        for m in self.modules():
+            if isinstance(m, nn.BatchNorm1d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
     
     def forward(self, x):
         """
@@ -50,24 +61,20 @@ class BoxHead(nn.Module):
 
         Return:
             dimensions: Tensor(N, 3)
-            theta_l: Tensor(N, num_bins, 2)
+            delta_theta_l: Tensor(N, num_bins)
             confidences: Tensor(N, num_bins)
         """
 
         # forward to fc layers
         dimensions = self.d_layers(x)
-        theta_l = self.a_layers(x)
+        delta_theta_l = self.a_layers(x)
         confidences = self.c_layers(x)
 
         # reshape and normalize for theta_l
-        theta_l = theta_l.view(-1, self.num_bins, 2)
-        theta_l_norm = torch.norm(theta_l, dim=2, keepdim=True)
-        theta_l = theta_l.div(theta_l_norm)
+        delta_theta_l = delta_theta_l.view(-1, self.num_bins, 2)
+        delta_theta_l = torch.atan2(delta_theta_l[:, :, 1], delta_theta_l[:, :, 0])
 
-        return dimensions, theta_l, confidences
-
-    def get_losses(self):
-        pass
+        return dimensions, delta_theta_l, confidences
 
 
 # debug
