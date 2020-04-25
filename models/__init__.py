@@ -1,6 +1,7 @@
 from . import backbones
 from . import heads
+from .posenet import PoseNet
 
 __all__ = [
-    'backbones', 'heads'
+    'PoseNet', 'backbones', 'heads'
 ]
