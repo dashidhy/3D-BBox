@@ -5,7 +5,7 @@ import tempfile
 from importlib import import_module
 
 __all__ = [
-    'file2dict', 'import_from'
+    'file2dict'
 ]
 
 def file2dict(filepath):
@@ -21,8 +21,3 @@ def file2dict(filepath):
     else:
         raise IOError('Only .py type configs are supported now!')
     return cfg_dict
-
-
-def import_from(module, name):
-    mod = import_module(module)
-    return getattr(mod, name)
