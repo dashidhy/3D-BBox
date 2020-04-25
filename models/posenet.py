@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from . import builder as bd
 
 __all__ = [
     'PoseNet'
@@ -8,10 +9,10 @@ __all__ = [
 
 class PoseNet(nn.Module):
 
-    def __init__(self, backbone, head):
+    def __init__(self, backbone_cfg, head_cfg):
         super(PoseNet, self).__init__()
-        self.backbone = backbone
-        self.head = head
+        self.backbone = bd.build_backbone(backbone_cfg)
+        self.head = bd.build_head(head_cfg)
     
     def forward(self, x):
         x = self.backbone(x)

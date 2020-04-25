@@ -1,7 +1,7 @@
 import argparse
 import torch
 from utils import config_utils as cu
-import models
+from models import PoseNet
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg_file', type=str, help='Config file path.')
@@ -11,11 +11,8 @@ cfg_dict = cu.file2dict(FLAGS.cfg_file)
 
 # build model
 model_cfg = cfg_dict['model']
-BACKBONE = getattr(models.backbones, model_cfg['backbone_type'])
-HEAD = getattr(models.heads, model_cfg['head_type'])
-
-posenet = models.PoseNet(backbone=BACKBONE(**model_cfg['backbone_cfg']),
-                         head=HEAD(**model_cfg['head_cfg']))
+posenet = PoseNet(backbone_cfg=model_cfg['backbone_cfg'],
+                  head_cfg=model_cfg['head_cfg'])
 
 
 # debug
