@@ -57,31 +57,24 @@ class BoxHead(nn.Module):
     def forward(self, x):
         """
         Input:
-            x: Tensor(N, self.in_size)
+            x: Tensor(N, self.in_size), flattened feature map
+               from backbone net
 
         Return:
-            dimensions: Tensor(N, 3)
-            delta_theta_l: Tensor(N, num_bins)
-            confidences: Tensor(N, num_bins)
+            delta_dimensions: Tensor(N, 3), each row (dh, dw, dl)
+            delta_theta_l_encode: Tensor(N, num_bins, 2), 
+                                  each bin (cos_encode, sin_encode),
+                                  should be normalized for loss or
+                                  use torch.atan2 to get the real angle
+            bin_confidences: Tensor(N, num_bins)
         """
 
         # forward to fc layers
-        dimensions = self.d_layers(x)
-        delta_theta_l = self.a_layers(x)
-        confidences = self.c_layers(x)
+        delta_dimensions = self.d_layers(x)
+        delta_theta_l_encode = self.a_layers(x)
+        bin_confidences = self.c_layers(x)
 
-        # reshape and normalize for theta_l
-        delta_theta_l = delta_theta_l.view(-1, self.num_bins, 2)
-        delta_theta_l = torch.atan2(delta_theta_l[:, :, 1], delta_theta_l[:, :, 0])
+        # reshape for theta_l
+        delta_theta_l_encode = delta_theta_l_encode.view(-1, self.num_bins, 2)
 
-        return dimensions, delta_theta_l, confidences
-
-
-# debug
-if __name__ == '__main__':
-    head = BoxHead(in_size=512)
-    fake_input = torch.randn(8, 512)
-    d, t, c = head(fake_input)
-    print(d.size())
-    print(t.size())
-    print(c.size())
+        return delta_dimensions, delta_theta_l_encode, bin_confidences
