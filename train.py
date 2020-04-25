@@ -1,6 +1,6 @@
 import argparse
 import torch
-from utils import config_utils as cu
+from miscs import config_utils as cu
 from models import PoseNet
 
 parser = argparse.ArgumentParser()
