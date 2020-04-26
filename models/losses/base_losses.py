@@ -9,9 +9,13 @@ class BaseLoss(object):
 
     def __call__(self, value, target, weight=None, reduction='mean'):
 
-        loss = self.loss_func(value, target)
+        target = target.to(value.device)
+
+        loss = self.loss_func(value, target) # should be element-wise loss
 
         if weight is not None:
+            if isinstance(weight, torch.Tensor):
+                weight = weight.to(loss.device)
             loss *= weight
         
         if reduction == 'none':
@@ -24,7 +28,7 @@ class BaseLoss(object):
             raise ValueError('Unsupported reduction type \'{}\''.format(reduction))
 
     def loss_func(self, value, target):
-        raise NotImplementedError('Loss function is not inplemented yet!')
+        raise NotImplementedError('Loss function is not implemented yet!')
 
 
 class MSE(BaseLoss):
@@ -61,7 +65,7 @@ class CrossEntropy(BaseLoss):
 
 class Cosine_Expansion(BaseLoss):
 
-    def __init__(self, normalize=False):
+    def __init__(self, normalize=True):
         super(Cosine_Expansion, self).__init__()
         self.normalize = normalize
 
