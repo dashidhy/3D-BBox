@@ -1,79 +1,50 @@
 import torch
-from . import base_losses as bl 
+import numpy as np
+from . import base_losses
+
+__all__ = [
+    'Dimension_Loss', 'Pose_Loss'
+]
 
 
-class TaskLoss(object):
+def build_base_loss(cfg):
+    attr = getattr(base_losses, cfg.pop('type'))
+    return attr(**cfg)
 
-    def __init__(self, base_loss_cfg):
-        loss_class = getattr(bl, base_loss_cfg.pop('type'))
-        self.base_loss = loss_class(**base_loss_cfg)
 
-    def label2target(self, label):
-        raise NotImplementedError('label2target method not implemented!')
+class Dimension_Loss(object):
 
+    def __init__(self, base_loss_cfg, avg_dim=[1., 1., 1.]):
+        self.base_loss = build_base_loss(base_loss_cfg)
+        self.avg_dim = torch.tensor(avg_dim)
+    
     def __call__(self, value, label, weight=None, reduction='mean'):
-        target = self.label2target(label)
+        target = label - self.avg_dim
         return self.base_loss(value, target, weight, reduction)
 
 
-class Dimension_Loss(TaskLoss):
+class Pose_Loss(object):
 
-    def __init__(self, base_loss_cfg, avg_dim=[1., 1., 1.]):
-        super(Dimension_Loss, self).__init__(base_loss_cfg)
-        self.avg_dim = torch.tensor(avg_dim)
-    
-    def label2target(self, label):
-        """
-        Input:
-            label: Tensor(N, 3), gt dimensions
-        Return:
-            target: Tensor(N, 3), residual dimensions w.r.t avg dimension
-        """
-        return label - self.avg_dim
-
-
-class Bin_Confidence_Loss(TaskLoss):
-
-    def __init__(self, base_loss_cfg, bin_centers):
-        """
-        bin_centers: Tensor(num_bins)
-        """
-        super(Bin_Confidence_Loss, self).__init__(base_loss_cfg)
-        self.bin_centers = bin_centers
-    
-    def label2target(self, label):
-        """
-        Input:
-            label: Tensor(N, dtype=float), theta_l
-        Return:
-            target: Tensor(N, dtype=int), bin classes,
-                    theta_l is assigned to the class of
-                    nearest bin center
-        """
-        label_to_center = torch.cos(label.view(-1, 1) - self.bin_centers) # (N, num_bins)
-        return torch.argmax(label_to_center, dim=1)
-
-
-class Bin_Regression_Loss(TaskLoss):
-
-    def __init__(self, base_loss_cfg, bin_centers, bin_range):
-        super(Bin_Regression_Loss, self).__init__(base_loss_cfg)
-        self.bin_centers = bin_centers
+    def __init__(self, base_conf_cfg, base_reg_cfg, num_bins, bin_range):
+        self.base_conf_loss = build_base_loss(base_conf_cfg)
+        self.base_reg_loss = build_base_loss(base_reg_cfg)
+        self.bin_centers = torch.arange(num_bins).float() * (2 * np.pi / num_bins)
         self.bin_cos_half_range = torch.cos(bin_range * 0.5)
     
-    def label2target(self, label):
-        """
-        Input:
-            label: Tensor(N), theta_l
-        Return:
-            target: Tensor(N, num_bins)
-            mask: Tensor(N, num_bins)
-        """
-        target = label.view(-1, 1) - self.bin_centers
-        mask = (torch.cos(target) < self.bin_cos_half_range).float()
-        return target, mask
-
-    def __call__(self, value, label, weight=None, reduction='mean'):
-        target, mask = self.label2target(label)
-        final_weight = mask if weight is None else mask * weight
-        return self.base_loss(value, target, final_weight, reduction)
+    def label2targets(self, label):
+        reg_target = label.view(-1, 1) - self.bin_centers
+        reg_target_cos = torch.cos(reg_target)
+        reg_mask = (reg_target_cos > self.bin_cos_half_range).float()
+        conf_target = torch.argmax(reg_target_cos, dim=1)
+        return conf_target, reg_target, reg_mask
+    
+    def __call__(self, conf_value, reg_value, label, 
+                 conf_weight=None, reg_weight=None,
+                 conf_reduction='mean',
+                 reg_reduction='mean'):
+        conf_target, reg_target, reg_mask = self.label2targets(label)
+        reg_final_weight = reg_mask if reg_weight is None else reg_mask * reg_weight
+        
+        conf_loss = self.base_conf_loss(conf_value, conf_target, conf_weight, conf_reduction)
+        reg_loss = self.base_reg_loss(reg_value, reg_target, reg_final_weight, reg_reduction)
+        return conf_loss, reg_loss
