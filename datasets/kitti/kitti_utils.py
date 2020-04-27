@@ -100,7 +100,12 @@ def write_box_image(box_image, filepath, force=False):
 
 class box_label2tensor(object):
 
+    def __init__(self, del_labels=()):
+        self.del_labels = del_labels
+
     def __call__(self, box_label):
+        for key in self.del_labels:
+            del box_label[key]
         for key, val in box_label.items():
             if not isinstance(val, str):
                 box_label[key] = torch.tensor(val)
