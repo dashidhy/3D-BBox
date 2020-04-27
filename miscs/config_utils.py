@@ -21,3 +21,11 @@ def file2dict(filepath):
     else:
         raise IOError('Only .py type configs are supported now!')
     return cfg_dict
+
+
+def parse_args_update(parse_args, cfg):
+    for key in cfg:
+        parse_arg_val = getattr(parse_args, key, None)
+        if parse_arg_val is not None:
+            cfg[key] = parse_arg_val
+    return cfg
