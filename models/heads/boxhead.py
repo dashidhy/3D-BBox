@@ -18,9 +18,9 @@ class BoxHead(nn.Module):
             self,
             in_size=512*7*7,
             num_bins=2,
-            d_hidden_sizes=[512],
-            a_hidden_sizes=[256],
-            c_hidden_sizes=[256],
+            dim_reg_hide_sizes=[512],
+            bin_conf_hide_sizes=[256],
+            bin_reg_hide_sizes=[256],
             init_weights=True
         ):
         super(BoxHead, self).__init__()
@@ -28,9 +28,9 @@ class BoxHead(nn.Module):
         self.in_size = in_size
         self.num_bins = num_bins
 
-        self.d_layers = self._make_fc_layers(d_hidden_sizes, 3)
-        self.a_layers = self._make_fc_layers(a_hidden_sizes, num_bins*2)
-        self.c_layers = self._make_fc_layers(c_hidden_sizes, num_bins)
+        self.dim_reg_layers = self._make_fc_layers(dim_reg_hide_sizes, 3)
+        self.bin_conf_layers = self._make_fc_layers(bin_conf_hide_sizes, num_bins)
+        self.bin_reg_layers = self._make_fc_layers(bin_reg_hide_sizes, num_bins*2)
 
         if init_weights:
             self.init_weights()
@@ -61,20 +61,17 @@ class BoxHead(nn.Module):
                from backbone net
 
         Return:
-            delta_dimensions: Tensor(N, 3), each row (dh, dw, dl)
-            delta_theta_l_encode: Tensor(N, num_bins, 2), 
-                                  each bin (cos_encode, sin_encode),
-                                  should be normalized for loss or
-                                  use torch.atan2 to get the real angle
-            bin_confidences: Tensor(N, num_bins)
+            dim_reg: Tensor(N, 3), each row (dh, dw, dl)
+            bin_conf: Tensor(N, num_bins), bin confidence scores
+            bin_reg: Tensor(N, num_bins, 2), 
+                     each bin (cos_encode, sin_encode),
+                     should be normalized for loss or
+                     use torch.atan2 to get the real angle
         """
 
         # forward to fc layers
-        delta_dimensions = self.d_layers(x)
-        delta_theta_l_encode = self.a_layers(x)
-        bin_confidences = self.c_layers(x)
+        dim_reg = self.dim_reg_layers(x)
+        bin_conf = self.bin_conf_layers(x)
+        bin_reg = self.bin_reg_layers(x).view(-1, self.num_bins, 2)
 
-        # reshape for theta_l
-        delta_theta_l_encode = delta_theta_l_encode.view(-1, self.num_bins, 2)
-
-        return delta_dimensions, delta_theta_l_encode, bin_confidences
+        return dim_reg, bin_conf, bin_reg
