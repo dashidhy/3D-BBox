@@ -16,6 +16,7 @@ def build_base_loss(cfg):
 class Dimension_Loss(nn.Module):
 
     def __init__(self, base_loss_cfg, avg_dim=[1., 1., 1.]):
+        super(Dimension_Loss, self).__init__()
         self.base_loss = build_base_loss(base_loss_cfg)
         self.register_buffer('avg_dim', torch.tensor(avg_dim).float())
     
@@ -27,6 +28,7 @@ class Dimension_Loss(nn.Module):
 class Pose_Loss(nn.Module):
 
     def __init__(self, base_conf_cfg, base_reg_cfg, num_bins, bin_range_degree):
+        super(Pose_Loss, self).__init__()
         self.base_conf_loss = build_base_loss(base_conf_cfg)
         self.base_reg_loss = build_base_loss(base_reg_cfg)
         self.register_buffer('bin_centers', torch.arange(num_bins).float() * 2 * np.pi / num_bins)
