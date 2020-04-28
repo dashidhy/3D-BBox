@@ -48,3 +48,50 @@ pose_loss = build_loss(loss_cfg['pose_loss_cfg'].copy()).cuda()
 # build optimizer
 optim_type = getattr(torch.optim, optimizer_cfg.pop('type'))
 optimizer = optim_type(posenet.parameters(), **optimizer_cfg)
+
+# begin training
+logger.info('TRAINING BEGINS!!!')
+iteration = 0
+for epoch in range(training_cfg['total_epoch']):
+
+    logger.info('******** EPOCH %03d ********' % epoch)
+
+    for batch_image, batch_label in train_loader:
+
+        # load batch data to gpu
+        batch_image_cuda = batch_image.cuda()
+        batch_dim_label_cuda = batch_label['dimensions'].cuda()
+        batch_theta_l_label_cuda = batch_label['theta_l'].cuda()
+
+        # forward
+        optimizer.zero_grad()
+        dim_reg, bin_conf, bin_reg = posenet(batch_image_cuda)
+
+        # loss
+        dim_reg_loss = dimension_loss(dim_reg, batch_dim_label_cuda)
+        bin_conf_loss, bin_reg_loss = pose_loss(bin_conf, bin_reg, batch_theta_l_label_cuda)
+        loss = dim_reg_loss * loss_cfg['loss_weights']['dim_reg'] +  \
+               bin_conf_loss * loss_cfg['loss_weights']['bin_conf'] + \
+               bin_reg_loss * loss_cfg['loss_weights']['bin_reg']
+        
+        # optimize
+        loss.backward()
+        optimizer.step()
+
+        # log
+        if iteration % log_cfg['log_loss_every'] == 0:
+            logger.add_scalar('Loss/dim_reg', dim_reg_loss, iteration)
+            logger.add_scalar('Loss/bin_conf', bin_conf_loss, iteration)
+            logger.add_scalar('Loss/bin_reg', bin_reg_loss, iteration)
+        
+        if iteration % log_cfg['show_loss_every'] == 0:
+            logger.info('batch %05d | dim_reg: %8.6f | bin_conf: %8.6f | bin_reg: %9.6f' \
+                        % (iteration, dim_reg_loss.item(), bin_conf_loss.item(), bin_reg_loss.item()))
+
+        iteration += 1
+    
+    # checkpoint
+    if (epoch + 1) % log_cfg['ckpt_every'] == 0:
+        logger.add_checkpoint(epoch + 1, posenet, optimizer)
+
+logger.info('TRAINING ENDS!!!')
