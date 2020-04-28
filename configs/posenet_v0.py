@@ -62,5 +62,8 @@ training_cfg = dict(
 )
 
 log_cfg = dict(
-    log_dir = './run'
+    log_dir = './run',
+    log_loss_every = 10, # unit: iteration
+    show_loss_every = 100, # unit: iteration
+    ckpt_every = 1, # unit: epoch
 )
