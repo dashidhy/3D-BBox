@@ -24,6 +24,8 @@ class BaseLoss(object):
             return loss.sum()
         elif reduction == 'mean':
             return loss.mean()
+        elif reduction == 'batch_mean':
+            return loss.sum() / loss.size(0)
         else:
             raise ValueError('Unsupported reduction type \'{}\''.format(reduction))
 
