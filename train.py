@@ -26,9 +26,10 @@ loader_cfg = cu.parse_args_update(FLAGS, training_cfg['loader_cfg']).copy()
 optimizer_cfg = cu.parse_args_update(FLAGS, training_cfg['optimizer_cfg']).copy()
 log_cfg = cu.parse_args_update(FLAGS, cfg_dict['log_cfg']).copy()
 
-# log parse_args
+# build logger and backup configs
 logger = X_Logger(log_cfg['log_dir'])
 logger.add_parse_args(FLAGS)
+logger.add_config_file(FLAGS.cfg_file)
 
 # build dataset and dataloader
 train_set = KittiBoxSet(kitti_root=dataset_cfg['kitti_root'], split='train', 
@@ -68,8 +69,8 @@ for epoch in range(training_cfg['total_epoch']):
         dim_reg, bin_conf, bin_reg = posenet(batch_image_cuda)
 
         # loss
-        dim_reg_loss = dimension_loss(dim_reg, batch_dim_label_cuda)
-        bin_conf_loss, bin_reg_loss = pose_loss(bin_conf, bin_reg, batch_theta_l_label_cuda)
+        dim_reg_loss = dimension_loss(dim_reg, batch_dim_label_cuda, reduction='batch_mean')
+        bin_conf_loss, bin_reg_loss = pose_loss(bin_conf, bin_reg, batch_theta_l_label_cuda, reg_reduction='batch_mean')
         loss = dim_reg_loss * loss_cfg['loss_weights']['dim_reg'] +  \
                bin_conf_loss * loss_cfg['loss_weights']['bin_conf'] + \
                bin_reg_loss * loss_cfg['loss_weights']['bin_reg']

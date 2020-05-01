@@ -1,4 +1,5 @@
 import os
+import shutil
 import logging
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -38,6 +39,10 @@ class X_Logger(SummaryWriter):
     def add_parse_args(self, parse_args):
         with open(os.path.join(self.root_dir, 'parse_args.txt'), 'w') as f:
             f.write(str(parse_args))
+    
+    def add_config_file(self, filepath):
+        filename = filepath.split('/')[-1]
+        shutil.copy(filepath, os.path.join(self.root_dir, 'cfg_file__'+filename))
     
     def add_checkpoint(self, num_epoch, model, optimizer, ckpt_name=None):
         save_dict = {'num_epoch': num_epoch,
