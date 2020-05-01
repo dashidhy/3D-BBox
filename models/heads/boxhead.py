@@ -21,6 +21,7 @@ class BoxHead(nn.Module):
             dim_reg_hide_sizes=[512],
             bin_conf_hide_sizes=[256],
             bin_reg_hide_sizes=[256],
+            cos_sin_encode=False,
             init_weights=True
         ):
         super(BoxHead, self).__init__()
@@ -30,7 +31,9 @@ class BoxHead(nn.Module):
 
         self.dim_reg_layers = self._make_fc_layers(dim_reg_hide_sizes, 3)
         self.bin_conf_layers = self._make_fc_layers(bin_conf_hide_sizes, num_bins)
-        self.bin_reg_layers = self._make_fc_layers(bin_reg_hide_sizes, num_bins*2)
+        self.cos_sin_encode = cos_sin_encode
+        bin_reg_out_size = num_bins * 2 if self.cos_sin_encode else num_bins
+        self.bin_reg_layers = self._make_fc_layers(bin_reg_hide_sizes, bin_reg_out_size)
 
         if init_weights:
             self.init_weights()
@@ -72,6 +75,8 @@ class BoxHead(nn.Module):
         # forward to fc layers
         dim_reg = self.dim_reg_layers(x)
         bin_conf = self.bin_conf_layers(x)
-        bin_reg = self.bin_reg_layers(x).view(-1, self.num_bins, 2)
+        bin_reg = self.bin_reg_layers(x)
+        if self.cos_sin_encode:
+            bin_reg = bin_reg.view(-1, self.num_bins, 2)
 
         return dim_reg, bin_conf, bin_reg
