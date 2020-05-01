@@ -22,7 +22,9 @@ model_cfg = dict(
                     num_bins = __NUM_BINS,
                     dim_reg_hide_sizes = [512],
                     bin_conf_hide_sizes = [256],
-                    bin_reg_hide_sizes = [256])
+                    bin_reg_hide_sizes = [256],
+                    cos_sin_encode = False,
+                    init_weights = True)
 )
 
 # loss settings
@@ -34,12 +36,11 @@ loss_cfg = dict(
     
     pose_loss_cfg = dict(type = 'Pose_Loss',
                          base_conf_cfg = dict(type = 'CrossEntropy'),
-                         base_reg_cfg = dict(type = 'Cosine_Expansion', 
-                                             normalize = True),
+                         base_reg_cfg = dict(type = 'MSE'),
                          num_bins = __NUM_BINS,
-                         bin_range_degree = 120),
+                         bin_range_degree = 100.0),
     
-    loss_weights = {'dim_reg': 1.0, 'bin_conf': 1.0, 'bin_reg': 1.0}
+    loss_weights = {'dim_reg': 0.2, 'bin_conf': 1.0, 'bin_reg': 3.0}
 )
 
 # training settings
@@ -54,7 +55,7 @@ training_cfg = dict(
                          lr = 1e-4, 
                          momentum = 0.9, 
                          dampening = 0, 
-                         weight_decay = 1e-4, 
+                         weight_decay = 0, 
                          nesterov = False),
     
     total_epoch = 10
