@@ -74,7 +74,6 @@ class Cosine_Expansion(BaseLoss):
         assert value.size(-1) == 2
 
         if self.normalize:
-            value_norm = torch.norm(value, dim=-1, keepdim=True)
-            value = torch.div(value, value_norm)
+            value = F.normalize(value, dim=-1)
 
         return -(torch.cos(target) * value[..., 0] + torch.sin(target) * value[..., 1])
