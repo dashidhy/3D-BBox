@@ -3,13 +3,13 @@ from torch import nn
 import numpy as np
 
 __all__ = [
-    'Aligned_IoU_3D', 'Orientation_Score'
+    'Aligned_IoU_3D', 'Orientation_Score', 'Dimension_Predictor', 'Pose_Predictor'
 ]
 
 
 def Aligned_IoU_3D(predict, label):
     label = label.to(predict.device)
-    predict = torch.max(predict, torch.tensor(0.0))
+    predict = torch.max(predict, torch.tensor(0.0).to(predict.device))
     inter = torch.min(predict, label)
     inter_vol = inter[:, 0] * inter[:, 1] * inter[:, 2]
     predict_vol = predict[:, 0] * predict[:, 1] * predict[:, 2]
@@ -32,8 +32,7 @@ class Dimension_Predictor(nn.Module):
     
     def predict_and_eval(self, value, label):
         pred = self.forward(value)
-        IoU = Aligned_IoU_3D(pred, label)
-        return pred, IoU
+        return pred, Aligned_IoU_3D(pred, label)
 
 
 class Pose_Predictor(nn.Module):
