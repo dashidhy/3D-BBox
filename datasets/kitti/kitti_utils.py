@@ -59,12 +59,17 @@ def read_box_label(filepath):
 
 def label_scene2box(label):
     theta_ray = np.arctan2(label['location'][2], label['location'][0])
+    theta_l = np.pi - theta_ray - label['ry']
+    if theta_l > np.pi:
+        theta_l -= 2.0 * np.pi
+    if theta_l < -np.pi:
+        theta_l += 2.0 * np.pi
     box_label = {
         'sample': label['sample'],
         'type': label['type'],
         'class': label['class'],
         'dimensions': label['dimensions'],
-        'theta_l': np.pi - theta_ray - label['ry']
+        'theta_l': theta_l
     }
     return box_label
 
