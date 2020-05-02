@@ -9,6 +9,7 @@ def fbr_layer(in_size, out_size, bias=False):
     return nn.Sequential(
         nn.Linear(in_size, out_size, bias=bias),
         nn.BatchNorm1d(out_size),
+        nn.Dropout(inplace=True),
         nn.ReLU(inplace=True)
     )
 

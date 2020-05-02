@@ -31,16 +31,16 @@ model_cfg = dict(
 loss_cfg = dict(
     
     dimension_loss_cfg = dict(type = 'Dimension_Loss',
-                              base_loss_cfg = dict(type = 'MSE'),
+                              base_loss_cfg = dict(type = 'Smooth_L1'),
                               avg_dim = [1.61057209, 1.47745965, 3.52359498]),
     
     pose_loss_cfg = dict(type = 'Pose_Loss',
                          base_conf_cfg = dict(type = 'CrossEntropy'),
-                         base_reg_cfg = dict(type = 'MSE'),
+                         base_reg_cfg = dict(type = 'Smooth_L1'),
                          num_bins = __NUM_BINS,
                          bin_range_degree = 100.0),
     
-    loss_weights = {'dim_reg': 0.1, 'bin_conf': 1.0, 'bin_reg': 3.0}
+    loss_weights = {'dim_reg': 0.5, 'bin_conf': 1.0, 'bin_reg': 3.0}
 )
 
 # training settings
