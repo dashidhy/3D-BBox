@@ -2,7 +2,7 @@ import os
 import argparse
 import torch
 from torch.utils.data import DataLoader
-from miscs import config_utils as cu, X_Logger
+from miscs import config_utils as cu, eval_utils as eu, X_Logger
 from datasets.kitti import KittiBoxSet
 import models
 from models.builder import build_from, build_loss
@@ -38,6 +38,15 @@ train_set = KittiBoxSet(kitti_root=dataset_cfg['kitti_root'], split='train',
 
 train_loader = DataLoader(train_set, shuffle=True, **loader_cfg)
 
+total_train_sample = len(train_loader) * train_loader.batch_size if train_loader.drop_last else len(train_loader.dataset)
+
+val_set = KittiBoxSet(kitti_root=dataset_cfg['kitti_root'], split='val', 
+                      transform=box_image2input(**dataset_cfg['img_norm']), 
+                      label_transform=box_label2tensor(dataset_cfg['del_labels']))
+
+val_loader = DataLoader(val_set, shuffle=True, **loader_cfg)
+
+total_val_sample = len(val_loader) * val_loader.batch_size if val_loader.drop_last else len(val_loader.dataset)
 
 # build model
 posenet = build_from(models, model_cfg).cuda()
@@ -49,6 +58,10 @@ pose_loss = build_loss(loss_cfg['pose_loss_cfg'].copy()).cuda()
 # build optimizer
 optim_type = getattr(torch.optim, optimizer_cfg.pop('type'))
 optimizer = optim_type(posenet.parameters(), **optimizer_cfg)
+
+# build predictor
+dimension_predictor = eu.Dimension_Predictor(loss_cfg['dimension_loss_cfg']['avg_dim']).cuda()
+pose_predictor = eu.Pose_Predictor(loss_cfg['pose_loss_cfg']['num_bins']).cuda()
 
 # begin training
 logger.info('TRAINING BEGINS!!!')
@@ -94,5 +107,87 @@ for epoch in range(training_cfg['total_epoch']):
     # checkpoint
     if (epoch + 1) % log_cfg['ckpt_every'] == 0:
         logger.add_checkpoint(epoch + 1, posenet, optimizer)
+    
+    # eval
+    if (epoch + 1) % log_cfg['eval_every'] == 0:
+        logger.info('EVAL ...')
+        posenet.eval()
+
+        # eval train set
+        dim_over_50 = 0
+        dim_over_70 = 0
+        bin_over_90 = 0
+        bin_over_95 = 0
+        for batch_image, batch_label in train_loader:
+            
+            # load batch data to gpu
+            batch_image_cuda = batch_image.cuda()
+            batch_dim_label_cuda = batch_label['dimensions'].cuda()
+            batch_theta_l_label_cuda = batch_label['theta_l'].cuda()
+
+            # forward
+            with torch.no_grad():
+                dim_reg, bin_conf, bin_reg = posenet(batch_image_cuda)
+            
+            # predict
+            _, dim_pred_score = dimension_predictor.predict_and_eval(dim_reg, batch_dim_label_cuda)
+            _, bin_pred_score = pose_predictor.predict_and_eval(bin_conf, bin_reg, batch_theta_l_label_cuda)
+            dim_over_50 += (dim_pred_score > 0.50).sum()
+            dim_over_70 += (dim_pred_score > 0.70).sum()
+            bin_over_90 += (bin_pred_score > 0.90).sum()
+            bin_over_95 += (bin_pred_score > 0.95).sum()
+        
+        dim_over_50 = dim_over_50.float() / total_train_sample
+        dim_over_70 = dim_over_70.float() / total_train_sample
+        bin_over_90 = bin_over_90.float() / total_train_sample
+        bin_over_95 = bin_over_95.float() / total_train_sample
+
+        logger.add_scalar('Eval_TRAIN/Aligned_IoU_3D_0.50', dim_over_50, epoch + 1)
+        logger.add_scalar('Eval_TRAIN/Aligned_IoU_3D_0.70', dim_over_70, epoch + 1)
+        logger.add_scalar('Eval_TRAIN/OS_0.90', bin_over_90, epoch + 1)
+        logger.add_scalar('Eval_TRAIN/OS_0.95', bin_over_95, epoch + 1)
+
+        logger.info('TRAIN SET | Aligned IoU 3D @ 0.50: %6.4f | Aligned IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
+                    % (dim_over_50.item(), dim_over_70.item(), bin_over_90.item(), bin_over_95.item()))
+        
+        # eval val set
+        dim_over_50 = 0
+        dim_over_70 = 0
+        bin_over_90 = 0
+        bin_over_95 = 0
+        for batch_image, batch_label in val_loader:
+            
+            # load batch data to gpu
+            batch_image_cuda = batch_image.cuda()
+            batch_dim_label_cuda = batch_label['dimensions'].cuda()
+            batch_theta_l_label_cuda = batch_label['theta_l'].cuda()
+
+            # forward
+            with torch.no_grad():
+                dim_reg, bin_conf, bin_reg = posenet(batch_image_cuda)
+            
+            # predict
+            _, dim_pred_score = dimension_predictor.predict_and_eval(dim_reg, batch_dim_label_cuda)
+            _, bin_pred_score = pose_predictor.predict_and_eval(bin_conf, bin_reg, batch_theta_l_label_cuda)
+            dim_over_50 += (dim_pred_score > 0.50).sum()
+            dim_over_70 += (dim_pred_score > 0.70).sum()
+            bin_over_90 += (bin_pred_score > 0.90).sum()
+            bin_over_95 += (bin_pred_score > 0.95).sum()
+        
+        dim_over_50 = dim_over_50.float() / total_val_sample
+        dim_over_70 = dim_over_70.float() / total_val_sample
+        bin_over_90 = bin_over_90.float() / total_val_sample
+        bin_over_95 = bin_over_95.float() / total_val_sample
+
+        logger.add_scalar('Eval_VAL/Aligned_IoU_3D_0.50', dim_over_50, epoch + 1)
+        logger.add_scalar('Eval_VAL/Aligned_IoU_3D_0.70', dim_over_70, epoch + 1)
+        logger.add_scalar('Eval_VAL/OS_0.90', bin_over_90, epoch + 1)
+        logger.add_scalar('Eval_VAL/OS_0.95', bin_over_95, epoch + 1)
+
+        logger.info('VALID SET | Aligned IoU 3D @ 0.50: %6.4f | Aligned IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
+                    % (dim_over_50.item(), dim_over_70.item(), bin_over_90.item(), bin_over_95.item()))
+
+        # eval val set
+        posenet.train()
 
 logger.info('TRAINING ENDS!!!')

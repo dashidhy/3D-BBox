@@ -40,7 +40,7 @@ loss_cfg = dict(
                          num_bins = __NUM_BINS,
                          bin_range_degree = 100.0),
     
-    loss_weights = {'dim_reg': 0.2, 'bin_conf': 1.0, 'bin_reg': 3.0}
+    loss_weights = {'dim_reg': 0.1, 'bin_conf': 1.0, 'bin_reg': 3.0}
 )
 
 # training settings
@@ -67,4 +67,5 @@ log_cfg = dict(
     log_loss_every = 10, # unit: iteration
     show_loss_every = 100, # unit: iteration
     ckpt_every = 1, # unit: epoch
+    eval_every = 1 # unit: epoch
 )
