@@ -15,7 +15,7 @@ def build_base_loss(cfg):
 
 class Dimension_Loss(nn.Module):
 
-    def __init__(self, base_loss_cfg, avg_dim=[1., 1., 1.]):
+    def __init__(self, base_loss_cfg, avg_dim=(1., 1., 1.)):
         super(Dimension_Loss, self).__init__()
         self.base_loss = build_base_loss(base_loss_cfg)
         self.register_buffer('avg_dim', torch.tensor(avg_dim).float())

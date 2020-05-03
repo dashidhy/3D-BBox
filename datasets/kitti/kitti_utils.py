@@ -51,8 +51,10 @@ def read_box_label(filepath):
         'sample': eles[0],
         'type': eles[1],
         'class': int(eles[2]),
-        'dimensions': (float(eles[3]), float(eles[4]), float(eles[5])),
-        'theta_l': float(eles[6])
+        'bbox2D': (float(eles[3]), float(eles[4]), float(eles[5]), float(eles[6])),
+        'dimensions': (float(eles[7]), float(eles[8]), float(eles[9])),
+        'location': (float(eles[10]), float(eles[11]), float(eles[12])),
+        'theta_l': float(eles[13])
     }
     return label
 
@@ -68,7 +70,9 @@ def label_scene2box(label):
         'sample': label['sample'],
         'type': label['type'],
         'class': label['class'],
+        'bbox2D': label['bbox2D'],
         'dimensions': label['dimensions'],
+        'location': label['location'],
         'theta_l': theta_l
     }
     return box_label
@@ -81,11 +85,18 @@ def write_box_label(box_label, filepath, force=False):
     assert filepath.endswith('.txt')
 
     write_string = ' '.join([box_label['sample'], 
-                             box_label['type'], 
-                             str(box_label['class']), 
+                             box_label['type'],
+                             str(box_label['class']),
+                             str(box_label['bbox2D'][0]),
+                             str(box_label['bbox2D'][1]),
+                             str(box_label['bbox2D'][2]),
+                             str(box_label['bbox2D'][3]),
                              str(box_label['dimensions'][0]),
                              str(box_label['dimensions'][1]),
                              str(box_label['dimensions'][2]),
+                             str(box_label['location'][0]),
+                             str(box_label['location'][1]),
+                             str(box_label['location'][2]),
                              str(box_label['theta_l'])])
     with open(filepath, 'w') as f:
         f.write(write_string)

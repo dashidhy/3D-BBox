@@ -5,7 +5,7 @@ __NUM_BINS = 4
 dataset_cfg = dict(
     kitti_root = './data/kitti',
     img_norm = {'mean': (0.485, 0.456, 0.406), 'std': (0.229, 0.224, 0.225)},
-    del_labels = ('sample', 'type', 'class')
+    del_labels = ('sample', 'type', 'class', 'bbox2D', 'location')
 )
 
 # model settings
@@ -32,7 +32,7 @@ loss_cfg = dict(
     
     dimension_loss_cfg = dict(type = 'Dimension_Loss',
                               base_loss_cfg = dict(type = 'Smooth_L1'),
-                              avg_dim = [1.61057209, 1.47745965, 3.52359498]),
+                              avg_dim = (1.61057209, 1.47745965, 3.52359498)),
     
     pose_loss_cfg = dict(type = 'Pose_Loss',
                          base_conf_cfg = dict(type = 'CrossEntropy'),
