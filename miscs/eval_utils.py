@@ -23,7 +23,7 @@ def Orientation_Score(predict, label):
 
 class Dimension_Predictor(nn.Module):
 
-    def __init__(self, avg_dim=[1.61057209, 1.47745965, 3.52359498]):
+    def __init__(self, avg_dim=(1.61057209, 1.47745965, 3.52359498)):
         super(Dimension_Predictor, self).__init__()
         self.register_buffer('avg_dim', torch.tensor(avg_dim).float())
     
