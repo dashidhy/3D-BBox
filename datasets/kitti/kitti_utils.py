@@ -14,6 +14,9 @@ def read_txt_lines(filepath):
     assert filepath.endswith('.txt')
     with open(filepath, 'r') as f:
         lines = f.read().splitlines()
+    # delete empty lines at the end of the file
+    while lines[-1] == '':
+        lines.pop()
     return tuple(lines)
 
 
@@ -43,6 +46,15 @@ def read_scene_labels(filepath):
             label['class'] = 2
         labels.append(label)
     return tuple(labels)
+
+
+def read_calib(filepath):
+    lines = read_txt_lines(filepath)
+    calib = {}
+    for line in lines:
+        eles = line.split()
+        calib[eles[0][:-1]] = torch.tensor([float(ele) for ele in eles[1:]]).view(3, -1)
+    return calib
 
 
 def read_box_label(filepath):
