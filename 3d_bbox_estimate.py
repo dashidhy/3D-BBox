@@ -68,7 +68,7 @@ def solve_3d_bbox_single(bbox2D, corners, theta_l, calib):
         X[:3, 3] = corners[i]
         K_X = torch.matmul(K, X)
         constrains['x1'][i]['A'] = K_X[0, :3] - x1 * K_X[2, :3]
-        constrains['x1'][i]['b'] = x1 * K_X[2, 3] - K[0, 3]
+        constrains['x1'][i]['b'] = x1 * K_X[2, 3] - K_X[0, 3]
     
     # x2 -> 4, 7
     constrains['x2'] = {}
@@ -78,7 +78,7 @@ def solve_3d_bbox_single(bbox2D, corners, theta_l, calib):
         X[:3, 3] = corners[i]
         K_X = torch.matmul(K, X)
         constrains['x2'][i]['A'] = K_X[0, :3] - x2 * K_X[2, :3]
-        constrains['x2'][i]['b'] = x2 * K_X[2, 3] - K[0, 3]
+        constrains['x2'][i]['b'] = x2 * K_X[2, 3] - K_X[0, 3]
     
     # y1 -> 4, 5, 6, 7
     constrains['y1'] = {}
@@ -88,7 +88,7 @@ def solve_3d_bbox_single(bbox2D, corners, theta_l, calib):
         X[:3, 3] = corners[i]
         K_X = torch.matmul(K, X)
         constrains['y1'][i]['A'] = K_X[1, :3] - y1 * K_X[2, :3]
-        constrains['y1'][i]['b'] = y1 * K_X[2, 3] - K[1, 3]
+        constrains['y1'][i]['b'] = y1 * K_X[2, 3] - K_X[1, 3]
     
     # y2 -> 2, 3, 0
     constrains['y2'] = {}
@@ -98,7 +98,7 @@ def solve_3d_bbox_single(bbox2D, corners, theta_l, calib):
         X[:3, 3] = corners[i]
         K_X = torch.matmul(K, X)
         constrains['y2'][i]['A'] = K_X[1, :3] - y2 * K_X[2, :3]
-        constrains['y2'][i]['b'] = y2 * K_X[2, 3] - K[1, 3]
+        constrains['y2'][i]['b'] = y2 * K_X[2, 3] - K_X[1, 3]
 
     # solving linear functions
     error = float('inf')
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     box_root = os.path.join(kitti_root, 'boxes', 'train')
     scene_root = os.path.join(kitti_root, 'training')
     
-    box_id = '%08d' % 321
+    box_id = '%08d' % 1234
     box_label = ku.read_box_label(os.path.join(box_root, 'label', box_id+'.txt'))
     scene_id = box_label['sample']
     calib = ku.read_calib(os.path.join(scene_root, 'calib', scene_id+'.txt'))
