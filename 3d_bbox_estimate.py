@@ -116,8 +116,7 @@ def solve_3d_bbox_single(bbox2D, corners, theta_l, calib):
             A[3] = constrains['y1'][j]['A']
             b[3] = constrains['y1'][j]['b']
 
-            trans_t, _ = torch.lstsq(b.view(-1, 1), A)
-            trans_t = trans_t.squeeze()[:3]
+            trans_t = torch.matmul(torch.pinverse(A), b)
             error_t = torch.norm(torch.matmul(A, trans_t) - b)
 
             if error_t < error:
@@ -135,8 +134,7 @@ def solve_3d_bbox_single(bbox2D, corners, theta_l, calib):
             A[3] = constrains['y1'][j]['A']
             b[3] = constrains['y1'][j]['b']
 
-            trans_t, _ = torch.lstsq(b.view(-1, 1), A)
-            trans_t = trans_t.squeeze()[:3]
+            trans_t = torch.matmul(torch.pinverse(A), b)
             error_t = torch.norm(torch.matmul(A, trans_t) - b)
 
             if error_t < error:
@@ -154,8 +152,7 @@ def solve_3d_bbox_single(bbox2D, corners, theta_l, calib):
             A[3] = constrains['y1'][j]['A']
             b[3] = constrains['y1'][j]['b']
 
-            trans_t, _ = torch.lstsq(b.view(-1, 1), A)
-            trans_t = trans_t.squeeze()[:3]
+            trans_t = torch.matmul(torch.pinverse(A), b)
             error_t = torch.norm(torch.matmul(A, trans_t) - b)
 
             if error_t < error:
@@ -173,7 +170,7 @@ if __name__ == '__main__':
     box_root = os.path.join(kitti_root, 'boxes', 'train')
     scene_root = os.path.join(kitti_root, 'training')
     
-    box_id = '%08d' % 1234
+    box_id = '%08d' % 321
     box_label = ku.read_box_label(os.path.join(box_root, 'label', box_id+'.txt'))
     scene_id = box_label['sample']
     calib = ku.read_calib(os.path.join(scene_root, 'calib', scene_id+'.txt'))
