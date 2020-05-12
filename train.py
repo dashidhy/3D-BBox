@@ -147,7 +147,7 @@ for epoch in range(training_cfg['total_epoch']):
         logger.add_scalar('Eval_TRAIN/OS_0.90', bin_over_90, epoch + 1)
         logger.add_scalar('Eval_TRAIN/OS_0.95', bin_over_95, epoch + 1)
 
-        logger.info('TRAIN SET | Aligned IoU 3D @ 0.50: %6.4f | Aligned IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
+        logger.info('TRAIN SET | A-IoU 3D @ 0.50: %6.4f | A-IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
                     % (dim_over_50.item(), dim_over_70.item(), bin_over_90.item(), bin_over_95.item()))
         
         # eval val set
@@ -184,7 +184,7 @@ for epoch in range(training_cfg['total_epoch']):
         logger.add_scalar('Eval_VAL/OS_0.90', bin_over_90, epoch + 1)
         logger.add_scalar('Eval_VAL/OS_0.95', bin_over_95, epoch + 1)
 
-        logger.info('VALID SET | Aligned IoU 3D @ 0.50: %6.4f | Aligned IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
+        logger.info('VALID SET | A-IoU 3D @ 0.50: %6.4f | A-IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
                     % (dim_over_50.item(), dim_over_70.item(), bin_over_90.item(), bin_over_95.item()))
 
         # eval val set
