@@ -5,7 +5,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 __all__ = [
-    'X_Logger'
+    'create_logger', 'X_Logger'
 ]
 
 
