@@ -71,6 +71,20 @@ bin_over_95 = 0
 loc_less_01 = 0
 loc_less_03 = 0
 loc_less_05 = 0
+ae_10 = 0
+ae_20 = 0
+ae_30 = 0
+ae_40 = 0
+ae_car = 0
+ae_pedestrian = 0
+ae_cyclist = 0
+num_10 = 0
+num_20 = 0
+num_30 = 0
+num_40 = 0
+num_car = 0
+num_pedestrian = 0
+num_cyclist = 0
 logger.info('EVAL TRAIN SET...')
 for batch_image, batch_label in tqdm(train_loader):
 
@@ -102,13 +116,38 @@ for batch_image, batch_label in tqdm(train_loader):
         sample_id = batch_label['sample'][i]
         calib = ku.read_calib(os.path.join(calib_root, sample_id+'.txt'))
         location_pred = solve_3d_bbox_single(bbox2D[i], corners[i], theta_l[i], calib)
-        location_error = torch.norm(location_pred - location[i])
+        location_error = torch.norm(location_pred - location[i]).item()
+        
         if location_error < 1.0:
             loc_less_01 += 1
         if location_error < 3.0:
             loc_less_03 += 1
         if location_error < 5.0:
             loc_less_05 += 1
+
+        if batch_label['class'][i] == 0: # car
+            ae_car += location_error
+            num_car += 1
+        elif batch_label['class'][i] == 1: # pedestrian
+            ae_pedestrian += location_error
+            num_pedestrian += 1
+        else: # cyclist
+            ae_cyclist += location_error
+            num_cyclist += 1
+        
+        dist = torch.norm(location[i]).item()
+        if dist <= 10:
+            ae_10 += location_error
+            num_10 += 1
+        elif dist <= 20:
+            ae_20 += location_error
+            num_20 += 1
+        elif dist <= 30:
+            ae_30 += location_error
+            num_30 += 1
+        elif dist <= 40:
+            ae_40 += location_error
+            num_40 += 1
 
 dim_over_50 /= total_train_sample
 dim_over_70 /= total_train_sample
@@ -117,9 +156,18 @@ bin_over_95 /= total_train_sample
 loc_less_01 /= total_train_sample
 loc_less_03 /= total_train_sample
 loc_less_05 /= total_train_sample
+ae_10 /= num_10
+ae_20 /= num_20
+ae_30 /= num_30
+ae_40 /= num_40
+ae_car /= num_car
+ae_pedestrian /= num_pedestrian  
+ae_cyclist /= num_cyclist
 
 logger.info('A-IoU 3D @ 0.50: %6.4f | A-IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f | LOC @ 1.0: %6.4f | LOC @ 3.0: %6.4f | LOC @ 5.0: %6.4f' \
              % (dim_over_50, dim_over_70, bin_over_90, bin_over_95, loc_less_01, loc_less_03, loc_less_05))
+logger.info('AE @ CAR: %6.4f | AE @ PEDESTRIAN: %6.4f | AE @ CYCLIST: %6.4f | AE @ 10: %6.4f | AE @ 20: %6.4f | AE @ 30: %6.4f | AE @ 40: %6.4f' \
+             % (ae_car, ae_pedestrian, ae_cyclist, ae_10, ae_20, ae_30, ae_40))
 
 
 # eval val set
@@ -130,7 +178,21 @@ bin_over_95 = 0
 loc_less_01 = 0
 loc_less_03 = 0
 loc_less_05 = 0
-logger.info('EVAL Val SET...')
+ae_10 = 0
+ae_20 = 0
+ae_30 = 0
+ae_40 = 0
+ae_car = 0
+ae_pedestrian = 0
+ae_cyclist = 0
+num_10 = 0
+num_20 = 0
+num_30 = 0
+num_40 = 0
+num_car = 0
+num_pedestrian = 0
+num_cyclist = 0
+logger.info('EVAL VAL SET...')
 for batch_image, batch_label in tqdm(val_loader):
 
     # load batch data to gpu
@@ -161,13 +223,38 @@ for batch_image, batch_label in tqdm(val_loader):
         sample_id = batch_label['sample'][i]
         calib = ku.read_calib(os.path.join(calib_root, sample_id+'.txt'))
         location_pred = solve_3d_bbox_single(bbox2D[i], corners[i], theta_l[i], calib)
-        location_error = torch.norm(location_pred - location[i])
+        location_error = torch.norm(location_pred - location[i]).item()
+
         if location_error < 1.0:
             loc_less_01 += 1
         if location_error < 3.0:
             loc_less_03 += 1
         if location_error < 5.0:
             loc_less_05 += 1
+
+        if batch_label['class'][i] == 0: # car
+            ae_car += location_error
+            num_car += 1
+        elif batch_label['class'][i] == 1: # pedestrian
+            ae_pedestrian += location_error
+            num_pedestrian += 1
+        else: # cyclist
+            ae_cyclist += location_error
+            num_cyclist += 1
+        
+        dist = torch.norm(location[i]).item()
+        if dist <= 10:
+            ae_10 += location_error
+            num_10 += 1
+        elif dist <= 20:
+            ae_20 += location_error
+            num_20 += 1
+        elif dist <= 30:
+            ae_30 += location_error
+            num_30 += 1
+        elif dist <= 40:
+            ae_40 += location_error
+            num_40 += 1
 
 dim_over_50 /= total_val_sample
 dim_over_70 /= total_val_sample
@@ -176,6 +263,15 @@ bin_over_95 /= total_val_sample
 loc_less_01 /= total_val_sample
 loc_less_03 /= total_val_sample
 loc_less_05 /= total_val_sample
+ae_10 /= num_10
+ae_20 /= num_20
+ae_30 /= num_30
+ae_40 /= num_40
+ae_car /= num_car
+ae_pedestrian /= num_pedestrian  
+ae_cyclist /= num_cyclist
 
 logger.info('A-IoU 3D @ 0.50: %6.4f | A-IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f | LOC @ 1.0: %6.4f | LOC @ 3.0: %6.4f | LOC @ 5.0: %6.4f' \
              % (dim_over_50, dim_over_70, bin_over_90, bin_over_95, loc_less_01, loc_less_03, loc_less_05))
+logger.info('AE @ CAR: %6.4f | AE @ PEDESTRIAN: %6.4f | AE @ CYCLIST: %6.4f | AE @ 10: %6.4f | AE @ 20: %6.4f | AE @ 30: %6.4f | AE @ 40: %6.4f' \
+             % (ae_car, ae_pedestrian, ae_cyclist, ae_10, ae_20, ae_30, ae_40))
