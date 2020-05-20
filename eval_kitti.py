@@ -7,6 +7,7 @@ from miscs import config_utils as cu, eval_utils as eu, create_logger
 from datasets.kitti import KittiBoxSet
 import models
 from models.builder import build_from
+from datasets import box_image2input, box_label2tensor
 from datasets.kitti import kitti_utils as ku
 from bbox3D_estimate_v2 import dimensions_to_corners, solve_3d_bbox_single
 
@@ -36,16 +37,16 @@ loader_cfg['drop_last'] = False
 
 # build dataset and dataloader
 train_set = KittiBoxSet(kitti_root=dataset_cfg['kitti_root'], split='train', 
-                        transform=ku.box_image2input(**dataset_cfg['img_norm']), 
-                        label_transform=ku.box_label2tensor())
+                        transform=box_image2input(**dataset_cfg['img_norm']), 
+                        label_transform=box_label2tensor())
 
 train_loader = DataLoader(train_set, shuffle=True, **loader_cfg)
 
 total_train_sample = len(train_loader) * train_loader.batch_size if train_loader.drop_last else len(train_loader.dataset)
 
 val_set = KittiBoxSet(kitti_root=dataset_cfg['kitti_root'], split='val', 
-                      transform=ku.box_image2input(**dataset_cfg['img_norm']), 
-                      label_transform=ku.box_label2tensor())
+                      transform=box_image2input(**dataset_cfg['img_norm']), 
+                      label_transform=box_label2tensor())
 
 val_loader = DataLoader(val_set, shuffle=True, **loader_cfg)
 

@@ -6,7 +6,7 @@ from miscs import config_utils as cu, eval_utils as eu, X_Logger
 from datasets.kitti import KittiBoxSet
 import models
 from models.builder import build_from, build_loss
-from datasets.kitti.kitti_utils import box_label2tensor, box_image2input
+from datasets import box_label2tensor, box_image2input
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--cfg_file', type=str, required=True, help='Config file path, required flag.')
