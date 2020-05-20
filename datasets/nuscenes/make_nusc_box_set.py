@@ -175,16 +175,29 @@ def get_2d_boxes(sample_data_token: str, visibilities: List[str], dataroot: str,
             if max_x - min_x < 25.0 or max_y - min_y < 25.0:
                 continue
 
-        # TODO: add dimension, location, theta_l
-
         # Generate dictionary record to be included in the .json file.
         repro_rec = generate_record(ann_rec, min_x, min_y, max_x, max_y, sample_data_token, sd_rec['filename'])
+
+        # add dimensions, location
+        repro_rec['dimensions'] = box.wlh.tolist()
+        repro_rec['location'] = box.center.tolist()
+
+        # add theta_l (approximate)
+        theta_ray = np.arctan2(repro_rec['location'][2], repro_rec['location'][0])
+        front = box.orientation.rotate(np.array([1.0, 0.0, 0.0]))
+        ry = -np.arctan2(front[2], front[0])
+        theta_l = np.pi - theta_ray - ry
+        if theta_l > np.pi:
+            theta_l -= 2.0 * np.pi
+        if theta_l < -np.pi:
+            theta_l += 2.0 * np.pi
+        repro_rec['theta_l'] = theta_l
         
         # save box image
         box_image = scene_image.resize((224, 224), box=final_coords)
         box_image_file = os.path.join(box_image_dir, 'camera__{}__{}.png'.format(sample_data_token, i))
         box_image.save(box_image_file)
-        repro_rec['box_image_file'] = box_image_file
+        repro_rec['box_image_file'] = os.path.join(*box_image_file.split('/')[-4:])
         
         repro_recs.append(repro_rec)
 
