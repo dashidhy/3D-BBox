@@ -114,24 +114,3 @@ def solve_3d_bbox_single(bbox2D, corners, theta_l, calib):
 
     
     return trans
-
-
-# debug
-if __name__ == '__main__':
-    import os
-    from datasets.kitti import kitti_utils as ku
-    kitti_root = '/home/srip19-pointcloud/datasets/KITTI/'
-    box_root = os.path.join(kitti_root, 'boxes', 'train')
-    scene_root = os.path.join(kitti_root, 'training')
-    
-    box_id = '%08d' % 321
-    box_label = ku.read_box_label(os.path.join(box_root, 'label', box_id+'.txt'))
-    scene_id = box_label['sample']
-    calib = ku.read_calib(os.path.join(scene_root, 'calib', scene_id+'.txt'))
-
-    bbox2D = torch.tensor(box_label['bbox2D'])
-    corners = dimensions_to_corners(torch.tensor(box_label['dimensions']).unsqueeze(0)).squeeze()
-    theta_l = torch.tensor(box_label['theta_l'])
-
-    print(solve_3d_bbox_single(bbox2D, corners, theta_l, calib))
-    print(box_label['location'])
