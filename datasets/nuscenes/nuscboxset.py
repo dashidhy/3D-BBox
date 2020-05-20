@@ -18,7 +18,7 @@ class NuscBoxSet(Dataset):
         self.nusc_root = nusc_root
         image_anns_file = os.path.join(nusc_root, 'boxes', split, 'image_annotations.json')
 
-        print('Loading image annotations...')
+        print('Loading {} image annotations...'.format(split))
         with open(image_anns_file, 'r') as f:
             self.image_anns = json.load(f)
         print('Done. {} annotations loaded.'.format(self.__len__()))
@@ -42,10 +42,3 @@ class NuscBoxSet(Dataset):
             box_label = self.label_transform(box_label)
         
         return box_image, box_label
-
-
-# debug
-if __name__ == '__main__':
-    nusc_box_set = NuscBoxSet('/home/srip19-pointcloud/datasets/NuScenes', 'train')
-    _, box_label = nusc_box_set[12837]
-    print(box_label)
