@@ -132,15 +132,15 @@ for epoch in range(training_cfg['total_epoch']):
             # predict
             _, dim_pred_score = dimension_predictor.predict_and_eval(dim_reg, batch_dim_label_cuda)
             _, bin_pred_score = pose_predictor.predict_and_eval(bin_conf, bin_reg, batch_theta_l_label_cuda)
-            dim_over_50 += (dim_pred_score > 0.50).sum()
-            dim_over_70 += (dim_pred_score > 0.70).sum()
-            bin_over_90 += (bin_pred_score > 0.90).sum()
-            bin_over_95 += (bin_pred_score > 0.95).sum()
+            dim_over_50 += (dim_pred_score > 0.50).sum().item()
+            dim_over_70 += (dim_pred_score > 0.70).sum().item()
+            bin_over_90 += (bin_pred_score > 0.90).sum().item()
+            bin_over_95 += (bin_pred_score > 0.95).sum().item()
         
-        dim_over_50 = dim_over_50.float() / total_train_sample
-        dim_over_70 = dim_over_70.float() / total_train_sample
-        bin_over_90 = bin_over_90.float() / total_train_sample
-        bin_over_95 = bin_over_95.float() / total_train_sample
+        dim_over_50 = dim_over_50 / total_train_sample
+        dim_over_70 = dim_over_70 / total_train_sample
+        bin_over_90 = bin_over_90 / total_train_sample
+        bin_over_95 = bin_over_95 / total_train_sample
 
         logger.add_scalar('Eval_TRAIN/Aligned_IoU_3D_0.50', dim_over_50, epoch + 1)
         logger.add_scalar('Eval_TRAIN/Aligned_IoU_3D_0.70', dim_over_70, epoch + 1)
@@ -148,7 +148,7 @@ for epoch in range(training_cfg['total_epoch']):
         logger.add_scalar('Eval_TRAIN/OS_0.95', bin_over_95, epoch + 1)
 
         logger.info('TRAIN SET | A-IoU 3D @ 0.50: %6.4f | A-IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
-                    % (dim_over_50.item(), dim_over_70.item(), bin_over_90.item(), bin_over_95.item()))
+                    % (dim_over_50, dim_over_70, bin_over_90, bin_over_95))
         
         # eval val set
         dim_over_50 = 0
@@ -169,15 +169,15 @@ for epoch in range(training_cfg['total_epoch']):
             # predict
             _, dim_pred_score = dimension_predictor.predict_and_eval(dim_reg, batch_dim_label_cuda)
             _, bin_pred_score = pose_predictor.predict_and_eval(bin_conf, bin_reg, batch_theta_l_label_cuda)
-            dim_over_50 += (dim_pred_score > 0.50).sum()
-            dim_over_70 += (dim_pred_score > 0.70).sum()
-            bin_over_90 += (bin_pred_score > 0.90).sum()
-            bin_over_95 += (bin_pred_score > 0.95).sum()
+            dim_over_50 += (dim_pred_score > 0.50).sum().item()
+            dim_over_70 += (dim_pred_score > 0.70).sum().item()
+            bin_over_90 += (bin_pred_score > 0.90).sum().item()
+            bin_over_95 += (bin_pred_score > 0.95).sum().item()
         
-        dim_over_50 = dim_over_50.float() / total_val_sample
-        dim_over_70 = dim_over_70.float() / total_val_sample
-        bin_over_90 = bin_over_90.float() / total_val_sample
-        bin_over_95 = bin_over_95.float() / total_val_sample
+        dim_over_50 = dim_over_50 / total_val_sample
+        dim_over_70 = dim_over_70 / total_val_sample
+        bin_over_90 = bin_over_90 / total_val_sample
+        bin_over_95 = bin_over_95 / total_val_sample
 
         logger.add_scalar('Eval_VAL/Aligned_IoU_3D_0.50', dim_over_50, epoch + 1)
         logger.add_scalar('Eval_VAL/Aligned_IoU_3D_0.70', dim_over_70, epoch + 1)
@@ -185,7 +185,7 @@ for epoch in range(training_cfg['total_epoch']):
         logger.add_scalar('Eval_VAL/OS_0.95', bin_over_95, epoch + 1)
 
         logger.info('VALID SET | A-IoU 3D @ 0.50: %6.4f | A-IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
-                    % (dim_over_50.item(), dim_over_70.item(), bin_over_90.item(), bin_over_95.item()))
+                    % (dim_over_50, dim_over_70, bin_over_90, bin_over_95))
 
         # eval val set
         posenet.train()
