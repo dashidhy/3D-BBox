@@ -13,18 +13,19 @@ parser.add_argument('-c', '--cfg_file', type=str, required=True, help='Config fi
 parser.add_argument('--log_dir', type=str, help='Folder to save experiment records.')
 parser.add_argument('--kitti_root', type=str, help='KITTI dataset root.')
 parser.add_argument('--batch_size', type=int, help='Mini-batch size')
+parser.add_argument('--linear_lr', action='store_true', help='Adjust learning rate linearly according to batch size.')
 parser.add_argument('--num_workers', type=int, help='Number of workers for DataLoader')
 FLAGS = parser.parse_args()
 
 # parse configs
 cfg_dict = cu.file2dict(FLAGS.cfg_file)
-dataset_cfg = cu.parse_args_update(FLAGS, cfg_dict['dataset_cfg']).copy()
+dataset_cfg = cu.parse_args_update(FLAGS, cfg_dict['dataset_cfg'].copy())
 model_cfg = cfg_dict['model_cfg'].copy()
 loss_cfg = cfg_dict['loss_cfg'].copy()
 training_cfg = cfg_dict['training_cfg'].copy()
-loader_cfg = cu.parse_args_update(FLAGS, training_cfg['loader_cfg']).copy()
-optimizer_cfg = cu.parse_args_update(FLAGS, training_cfg['optimizer_cfg']).copy()
-log_cfg = cu.parse_args_update(FLAGS, cfg_dict['log_cfg']).copy()
+loader_cfg = cu.parse_args_update(FLAGS, training_cfg['loader_cfg'].copy())
+optimizer_cfg = cu.parse_args_update(FLAGS, training_cfg['optimizer_cfg'].copy())
+log_cfg = cu.parse_args_update(FLAGS, cfg_dict['log_cfg'].copy())
 
 # build logger and backup configs
 logger = X_Logger(log_cfg['log_dir'])
@@ -57,6 +58,8 @@ pose_loss = build_loss(loss_cfg['pose_loss_cfg'].copy()).cuda()
 
 # build optimizer
 optim_type = getattr(torch.optim, optimizer_cfg.pop('type'))
+if FLAGS.linear_lr:
+    optimizer_cfg['lr'] *= train_loader.batch_size / training_cfg['loader_cfg']['batch_size']
 optimizer = optim_type(posenet.parameters(), **optimizer_cfg)
 
 # build predictor
