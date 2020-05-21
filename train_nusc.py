@@ -99,7 +99,7 @@ for epoch in range(training_cfg['total_epoch']):
             logger.add_scalar('Loss/bin_reg', bin_reg_loss, iteration)
         
         if iteration % log_cfg['show_loss_every'] == 0:
-            logger.info('batch %05d | dim_reg: %8.6f | bin_conf: %8.6f | bin_reg: %9.6f' \
+            logger.info('batch %06d | dim_reg: %8.6f | bin_conf: %8.6f | bin_reg: %9.6f' \
                         % (iteration, dim_reg_loss.item(), bin_conf_loss.item(), bin_reg_loss.item()))
 
         iteration += 1
