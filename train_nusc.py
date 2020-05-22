@@ -97,9 +97,9 @@ for epoch in range(training_cfg['total_epoch']):
 
         # log
         if iteration % log_cfg['log_loss_every'] == 0:
-            logger.add_scalar('Loss/dim_reg', dim_reg_loss, iteration)
-            logger.add_scalar('Loss/bin_conf', bin_conf_loss, iteration)
-            logger.add_scalar('Loss/bin_reg', bin_reg_loss, iteration)
+            logger.add_scalar('Loss/dim_reg', dim_reg_loss.item(), iteration)
+            logger.add_scalar('Loss/bin_conf', bin_conf_loss.item(), iteration)
+            logger.add_scalar('Loss/bin_reg', bin_reg_loss.item(), iteration)
         
         if iteration % log_cfg['show_loss_every'] == 0:
             logger.info('batch %06d | dim_reg: %8.6f | bin_conf: %8.6f | bin_reg: %9.6f' \

@@ -49,8 +49,8 @@ loss_cfg = dict(
 # training settings
 training_cfg = dict(
     
-    loader_cfg = dict(batch_size = 8, 
-                      num_workers = 4,
+    loader_cfg = dict(batch_size = 192, 
+                      num_workers = 24,
                       pin_memory = True,
                       drop_last = True),
     
@@ -61,7 +61,7 @@ training_cfg = dict(
                          weight_decay = 0, 
                          nesterov = False),
     
-    total_epoch = 3
+    total_epoch = 10
     
 )
 
