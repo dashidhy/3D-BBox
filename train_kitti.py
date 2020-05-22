@@ -194,3 +194,4 @@ for epoch in range(training_cfg['total_epoch']):
         posenet.train()
 
 logger.info('TRAINING ENDS!!!')
+logger.close()
