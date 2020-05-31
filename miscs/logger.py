@@ -54,7 +54,3 @@ class X_Logger(SummaryWriter):
     
     def info(self, string):
         self.cmd_logger.info(string)
-    
-    def close(self):
-        self.cmd_logger.close()
-        super(X_Logger, self).close()
