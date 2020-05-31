@@ -15,13 +15,19 @@ def build_base_loss(cfg):
 
 class Dimension_Loss(nn.Module):
 
-    def __init__(self, base_loss_cfg, avg_dim=(1., 1., 1.)):
+    def __init__(self, base_loss_cfg, avg_dim=(1., 1., 1.), normalize=False):
         super(Dimension_Loss, self).__init__()
         self.base_loss = build_base_loss(base_loss_cfg)
         self.register_buffer('avg_dim', torch.tensor(avg_dim).float())
+        self.normalize = normalize
     
     def forward(self, value, label, weight=None, reduction='mean'):
         target = label - self.avg_dim.to(label.device)
+        if self.normalize:
+            if weight is None:
+                weight = 1.0 / label
+            else:
+                weight *= 1.0 / label
         return self.base_loss(value, target, weight, reduction)
 
 
