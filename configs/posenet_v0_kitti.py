@@ -40,32 +40,34 @@ loss_cfg = dict(
                          num_bins = __NUM_BINS,
                          bin_range_degree = 100.0),
     
-    loss_weights = {'dim_reg': 0.5, 'bin_conf': 1.0, 'bin_reg': 3.0}
+    loss_weights = {'dim_reg': 5.0, 'bin_conf': 1.0, 'bin_reg': 3.0}
 )
 
 # training settings
 training_cfg = dict(
     
-    loader_cfg = dict(batch_size = 8, 
-                      num_workers = 4,
+    loader_cfg = dict(batch_size = 128, 
+                      num_workers = 32,
                       pin_memory = True,
                       drop_last = True),
     
     optimizer_cfg = dict(type ='SGD',
-                         lr = 1e-4, 
+                         lr = 1.6e-3, 
                          momentum = 0.9, 
                          dampening = 0, 
-                         weight_decay = 0, 
+                         weight_decay = 1e-4, 
                          nesterov = False),
     
-    total_epoch = 10
+    total_epoch = 50,
+    lr_decay_epochs = [25],
+    lr_decay_rates = [0.1]
     
 )
 
 log_cfg = dict(
     log_dir = './run',
     log_loss_every = 10, # unit: iteration
-    show_loss_every = 100, # unit: iteration
+    show_loss_every = 20, # unit: iteration
     ckpt_every = 1, # unit: epoch
     eval_every = 1 # unit: epoch
 )

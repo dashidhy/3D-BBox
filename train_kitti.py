@@ -10,7 +10,7 @@ from datasets import box_label2tensor, box_image2input
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--cfg_file', type=str, required=True, help='Config file path, required flag.')
-parser.add_argument('--log_dir', type=str, help='Folder to save experiment records.')
+parser.add_argument('-l', '--log_dir', type=str, help='Folder to save experiment records.')
 parser.add_argument('--kitti_root', type=str, help='KITTI dataset root.')
 parser.add_argument('--batch_size', type=int, help='Mini-batch size')
 parser.add_argument('--linear_lr', action='store_true', help='Adjust learning rate linearly according to batch size.')
@@ -117,10 +117,16 @@ for epoch in range(training_cfg['total_epoch']):
         posenet.eval()
 
         # eval train set
-        dim_over_50 = 0
-        dim_over_70 = 0
-        bin_over_90 = 0
-        bin_over_95 = 0
+        dim_metric = {
+            0.50: 0.0, 
+            0.70: 0.0, 
+            0.90: 0.0
+        }
+        bin_metric = {
+            0.90: 0.0, 
+            0.95: 0.0, 
+            0.99: 0.0
+        }
         for batch_image, batch_label in train_loader:
             
             # load batch data to gpu
@@ -135,29 +141,38 @@ for epoch in range(training_cfg['total_epoch']):
             # predict
             _, dim_pred_score = dimension_predictor.predict_and_eval(dim_reg, batch_dim_label_cuda)
             _, bin_pred_score = pose_predictor.predict_and_eval(bin_conf, bin_reg, batch_theta_l_label_cuda)
-            dim_over_50 += (dim_pred_score > 0.50).sum().item()
-            dim_over_70 += (dim_pred_score > 0.70).sum().item()
-            bin_over_90 += (bin_pred_score > 0.90).sum().item()
-            bin_over_95 += (bin_pred_score > 0.95).sum().item()
+
+            # accumulate statistics
+            for key in dim_metric:
+                dim_metric[key] += (dim_pred_score > key).sum().item()
+            for key in bin_metric:
+                bin_metric[key] += (bin_pred_score > key).sum().item()
         
-        dim_over_50 = dim_over_50 / total_train_sample
-        dim_over_70 = dim_over_70 / total_train_sample
-        bin_over_90 = bin_over_90 / total_train_sample
-        bin_over_95 = bin_over_95 / total_train_sample
+        output_str = 'TRAIN SET'
+        
+        for key in sorted(dim_metric.keys()):
+            dim_metric[key] /= total_train_sample
+            logger.add_scalar('EVAL_TRAIN/AIoU_3D_%4.2f'%key, dim_metric[key], epoch + 1)
+            output_str += ' | A-IoU 3D @ %4.2f: %6.4f'%(key, dim_metric[key])
 
-        logger.add_scalar('Eval_TRAIN/Aligned_IoU_3D_0.50', dim_over_50, epoch + 1)
-        logger.add_scalar('Eval_TRAIN/Aligned_IoU_3D_0.70', dim_over_70, epoch + 1)
-        logger.add_scalar('Eval_TRAIN/OS_0.90', bin_over_90, epoch + 1)
-        logger.add_scalar('Eval_TRAIN/OS_0.95', bin_over_95, epoch + 1)
+        for key in bin_metric:
+            bin_metric[key] /= total_train_sample
+            logger.add_scalar('EVAL_TRAIN/OS_%4.2f'%key, bin_metric[key], epoch + 1)
+            output_str += ' | OS @ %4.2f: %6.4f'%(key, bin_metric[key])
 
-        logger.info('TRAIN SET | A-IoU 3D @ 0.50: %6.4f | A-IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
-                    % (dim_over_50, dim_over_70, bin_over_90, bin_over_95))
+        logger.info(output_str)
         
         # eval val set
-        dim_over_50 = 0
-        dim_over_70 = 0
-        bin_over_90 = 0
-        bin_over_95 = 0
+        dim_metric = {
+            0.50: 0.0, 
+            0.70: 0.0, 
+            0.90: 0.0
+        }
+        bin_metric = {
+            0.90: 0.0, 
+            0.95: 0.0, 
+            0.99: 0.0
+        }
         for batch_image, batch_label in val_loader:
             
             # load batch data to gpu
@@ -172,26 +187,35 @@ for epoch in range(training_cfg['total_epoch']):
             # predict
             _, dim_pred_score = dimension_predictor.predict_and_eval(dim_reg, batch_dim_label_cuda)
             _, bin_pred_score = pose_predictor.predict_and_eval(bin_conf, bin_reg, batch_theta_l_label_cuda)
-            dim_over_50 += (dim_pred_score > 0.50).sum().item()
-            dim_over_70 += (dim_pred_score > 0.70).sum().item()
-            bin_over_90 += (bin_pred_score > 0.90).sum().item()
-            bin_over_95 += (bin_pred_score > 0.95).sum().item()
+            
+            # accumulate statistics
+            for key in dim_metric:
+                dim_metric[key] += (dim_pred_score > key).sum().item()
+            for key in bin_metric:
+                bin_metric[key] += (bin_pred_score > key).sum().item()
         
-        dim_over_50 = dim_over_50 / total_val_sample
-        dim_over_70 = dim_over_70 / total_val_sample
-        bin_over_90 = bin_over_90 / total_val_sample
-        bin_over_95 = bin_over_95 / total_val_sample
+        output_str = 'VALID SET'
+        
+        for key in sorted(dim_metric.keys()):
+            dim_metric[key] /= total_val_sample
+            logger.add_scalar('EVAL_VALID/AIoU_3D_%4.2f'%key, dim_metric[key], epoch + 1)
+            output_str += ' | A-IoU 3D @ %4.2f: %6.4f'%(key, dim_metric[key])
 
-        logger.add_scalar('Eval_VAL/Aligned_IoU_3D_0.50', dim_over_50, epoch + 1)
-        logger.add_scalar('Eval_VAL/Aligned_IoU_3D_0.70', dim_over_70, epoch + 1)
-        logger.add_scalar('Eval_VAL/OS_0.90', bin_over_90, epoch + 1)
-        logger.add_scalar('Eval_VAL/OS_0.95', bin_over_95, epoch + 1)
+        for key in bin_metric:
+            bin_metric[key] /= total_val_sample
+            logger.add_scalar('EVAL_VALID/OS_%4.2f'%key, bin_metric[key], epoch + 1)
+            output_str += ' | OS @ %4.2f: %6.4f'%(key, bin_metric[key])
 
-        logger.info('VALID SET | A-IoU 3D @ 0.50: %6.4f | A-IoU 3D @ 0.70: %6.4f | OS @ 0.90: %6.4f | OS @ 0.95: %6.4f' \
-                    % (dim_over_50, dim_over_70, bin_over_90, bin_over_95))
+        logger.info(output_str)
 
         # eval val set
         posenet.train()
+    
+    if len(training_cfg['lr_decay_epochs']) > 0 and epoch + 1 == training_cfg['lr_decay_epochs'][0]:
+        training_cfg['lr_decay_epochs'].pop(0)
+        lr_decay_rate = training_cfg['lr_decay_rates'].pop(0)
+        for param_group in optimizer.param_groups:
+            param_group['lr'] *= lr_decay_rate
 
 logger.info('TRAINING ENDS!!!')
 logger.close()
