@@ -2,7 +2,7 @@ import os
 import argparse
 import torch
 from torch.utils.data import DataLoader
-from miscs import config_utils as cu, eval_utils as eu, X_Logger
+from miscs import config_utils as cu, eval_utils as eu, train_utils as tu, X_Logger
 from datasets.kitti import KittiBoxSet
 import models
 from models.builder import build_from, build_loss
@@ -35,7 +35,8 @@ logger.add_config_file(FLAGS.cfg_file)
 # build dataset and dataloader
 train_set = KittiBoxSet(kitti_root=dataset_cfg['kitti_root'], split='train', 
                         transform=box_image2input(**dataset_cfg['img_norm']), 
-                        label_transform=box_label2tensor(dataset_cfg['del_labels']))
+                        label_transform=box_label2tensor(dataset_cfg['del_labels']),
+                        augment=dataset_cfg['augment'], augment_type=dataset_cfg['augment_type'])
 
 train_loader = DataLoader(train_set, shuffle=True, **loader_cfg)
 
@@ -52,9 +53,12 @@ total_val_sample = len(val_loader) * val_loader.batch_size if val_loader.drop_la
 # build model
 posenet = build_from(models, model_cfg).cuda()
 
-# build loss
+# build loss and loss weight scheduler
 dimension_loss = build_loss(loss_cfg['dimension_loss_cfg'].copy()).cuda()
 pose_loss = build_loss(loss_cfg['pose_loss_cfg'].copy()).cuda()
+dim_reg_wt = tu.loss_weight_scheduler(**loss_cfg['loss_weights']['dim_reg'])
+bin_conf_wt = tu.loss_weight_scheduler(**loss_cfg['loss_weights']['bin_conf'])
+bin_reg_wt = tu.loss_weight_scheduler(**loss_cfg['loss_weights']['bin_reg'])
 
 # build optimizer
 optim_type = getattr(torch.optim, optimizer_cfg.pop('type'))
@@ -71,7 +75,7 @@ logger.info('TRAINING BEGINS!!!')
 iteration = 0
 for epoch in range(training_cfg['total_epoch']):
 
-    logger.info('******** EPOCH %03d ********' % epoch)
+    logger.info('******** EPOCH %03d ********' % (epoch + 1))
 
     for batch_image, batch_label in train_loader:
 
@@ -87,9 +91,9 @@ for epoch in range(training_cfg['total_epoch']):
         # loss
         dim_reg_loss = dimension_loss(dim_reg, batch_dim_label_cuda, reduction='batch_mean')
         bin_conf_loss, bin_reg_loss = pose_loss(bin_conf, bin_reg, batch_theta_l_label_cuda, reg_reduction='batch_mean')
-        loss = dim_reg_loss * loss_cfg['loss_weights']['dim_reg'] +  \
-               bin_conf_loss * loss_cfg['loss_weights']['bin_conf'] + \
-               bin_reg_loss * loss_cfg['loss_weights']['bin_reg']
+        loss = dim_reg_loss * dim_reg_wt.get_loss_weight(iteration) +  \
+               bin_conf_loss * bin_conf_wt.get_loss_weight(iteration) + \
+               bin_reg_loss * bin_reg_wt.get_loss_weight(iteration)
         
         # optimize
         loss.backward()
@@ -127,6 +131,7 @@ for epoch in range(training_cfg['total_epoch']):
             0.95: 0.0, 
             0.99: 0.0
         }
+        train_loader.dataset.augment = False
         for batch_image, batch_label in train_loader:
             
             # load batch data to gpu
@@ -147,6 +152,7 @@ for epoch in range(training_cfg['total_epoch']):
                 dim_metric[key] += (dim_pred_score > key).sum().item()
             for key in bin_metric:
                 bin_metric[key] += (bin_pred_score > key).sum().item()
+        train_loader.dataset.augment = dataset_cfg['augment']
         
         output_str = 'TRAIN SET'
         
