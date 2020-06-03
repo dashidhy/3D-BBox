@@ -2,7 +2,7 @@ import torch
 from torch.nn import functional as F
 
 __all__ = [
-    'BaseLoss', 'MSE', 'Smooth_L1', 'CrossEntropy', 'Cosine_Expansion'
+    'BaseLoss', 'MSE', 'L1_Loss', 'Smooth_L1', 'CrossEntropy', 'Cosine_Expansion'
 ]
 
 class BaseLoss(object):
@@ -40,6 +40,15 @@ class MSE(BaseLoss):
 
     def loss_func(self, value, target):
         return F.mse_loss(value, target, reduction='none')
+
+
+class L1_Loss(BaseLoss):
+
+    def __init__(self):
+        super(L1_Loss, self).__init__()
+
+    def loss_func(self, value, target):
+        return F.l1_loss(value, target, reduction='none')
 
 
 class Smooth_L1(BaseLoss):
