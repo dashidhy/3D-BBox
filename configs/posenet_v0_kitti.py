@@ -5,7 +5,9 @@ __NUM_BINS = 4
 dataset_cfg = dict(
     kitti_root = './data/kitti',
     img_norm = {'mean': (0.485, 0.456, 0.406), 'std': (0.229, 0.224, 0.225)},
-    del_labels = ('sample', 'type', 'class', 'bbox2D', 'location')
+    del_labels = ('sample', 'type', 'class', 'bbox2D', 'location'),
+    augment = True,
+    augment_type = ['flip']
 )
 
 # model settings
@@ -32,7 +34,8 @@ loss_cfg = dict(
     
     dimension_loss_cfg = dict(type = 'Dimension_Loss',
                               base_loss_cfg = dict(type = 'Smooth_L1'),
-                              avg_dim = (1.61057209, 1.47745965, 3.52359498)),
+                              avg_dim = (1.61057209, 1.47745965, 3.52359498),
+                              normalize = True),
     
     pose_loss_cfg = dict(type = 'Pose_Loss',
                          base_conf_cfg = dict(type = 'CrossEntropy'),
@@ -40,7 +43,9 @@ loss_cfg = dict(
                          num_bins = __NUM_BINS,
                          bin_range_degree = 100.0),
     
-    loss_weights = {'dim_reg': 5.0, 'bin_conf': 1.0, 'bin_reg': 3.0}
+    loss_weights = {'dim_reg': {'max_weight': 10.0}, 
+                    'bin_conf': {'max_weight': 1.0}, 
+                    'bin_reg': {'max_weight': 3.0}},
 )
 
 # training settings
@@ -49,18 +54,18 @@ training_cfg = dict(
     loader_cfg = dict(batch_size = 128, 
                       num_workers = 32,
                       pin_memory = True,
-                      drop_last = True),
+                      drop_last = False),
     
     optimizer_cfg = dict(type ='SGD',
                          lr = 1.6e-3, 
                          momentum = 0.9, 
                          dampening = 0, 
-                         weight_decay = 1e-4, 
-                         nesterov = False),
+                         weight_decay = 1e-2, 
+                         nesterov = True),
     
-    total_epoch = 50,
-    lr_decay_epochs = [25],
-    lr_decay_rates = [0.1]
+    total_epoch = 100,
+    lr_decay_epochs = [50, 75],
+    lr_decay_rates = [0.5, 0.5]
     
 )
 
